@@ -13,6 +13,8 @@
 | UI | Vanilla TypeScript עם DOM APIs | עדכון ממשק ללא Framework |
 | Build / Dev | Vite, תבנית `vanilla-ts` | שרת פיתוח ויצירת Build סטטי |
 | צלילים | Web Audio API | ארבעה צלילים מובחנים ללא קבצים חיצוניים |
+| גופן | Heebo דרך החבילה `@fontsource/heebo` | גופן עברי שנארז עם האתר, ללא טעינה משירות חיצוני |
+| רקע | גרפיקת SVG שנכתבת בקוד (קובץ `background.svg` בפרויקט) | רקע חלל וקטורי, חד בכל גודל מסך, ללא קובצי תמונה |
 | שמירת שיא | `window.localStorage` | שיא אישי יחיד לפי Origin |
 | PWA | Web App Manifest | התקנה דרך Chrome ב-Android |
 | בדיקות | Vitest + בדיקות ידניות ב-Chrome Android | בדיקת לוגיקה והתנהגות דפדפן |
@@ -27,6 +29,7 @@
 - **Web Audio API לעומת קובצי MP3/ספריית Tone.js:** ארבעה צלילים פשוטים ניתנים ליצירה באמצעות Oscillator ו-Gain מובנים. אין צורך להוריד קבצי שמע או להוסיף ספריית מוזיקה.
 - **Local Storage לעומת IndexedDB או Cloud Database:** ערך מספרי יחיד בלבד, ללא סנכרון או נתונים מורכבים.
 - **GitHub Pages לעומת Vercel/Netlify:** מוצר סטטי ללא Server Functions, עם GitHub Actions מובנה; החלופות מתאימות גם הן אך אינן מספקות יתרון הכרחי. Repository ציבורי ב-GitHub Free מאפשר Pages; שימוש ב-Repository פרטי תלוי בתוכנית. האתר המפורסם ציבורי גם כשה-Repository פרטי בתוכנית תומכת.
+- **Heebo מתוך הפרויקט לעומת Google Fonts:** הגופן נארז ב-Build ומוגש מאותה כתובת כמו האתר, כך שאין תלות בשירות חיצוני ואין בקשות לצד שלישי. טוענים רק את המשקלים שבשימוש (Regular, Medium, Bold).
 - **Vitest לעומת Jest או ללא בדיקות:** תואם לסביבת Vite, מתאים לבדיקות Unit של משחק אקראי ומכונת מצבים; אינו מחליף בדיקת שמע, Touch ו-PWA על מכשיר Android.
 
 **לא נדרשים:** Backend, Database, Authentication, Authorization ברמת משתמש, APIs חיצוניים, אחסון קבצים בענן, שירותי AI, Analytics, Push Notifications או מערכת חשבונות.
@@ -134,7 +137,8 @@ type GameState = {
 - `html lang="he" dir="rtl"`; כל טקסטי הממשק בעברית.
 - לוח 2×2 עם ארבעה כפתורים גדולים ומעוגלים, בצבעים כחול, אדום, צהוב וירוק. יש לשמור על שיוך קבוע בין צבע, מיקום וצליל.
 - יש להשתמש ב-`button` סמנטיים עם שמות נגישים בעברית, שטחי מגע גדולים ומשוב חזותי גם במצב מושתק. להימנע מהסתמכות על צבע בלבד לזיהוי פקד עבור טכנולוגיות מסייעות.
-- מסך בית: "התחל" / "משחק חדש" לפי מצב, מספר שלב, ניקוד, לוח, כפתור השתקה וכפתור "אודות".
+- מסך בית: "התחל" / "משחק חדש" לפי מצב, לוח, כותרת "משחק הזיכרון" במצב `idle` או פס שלב וניקוד בכל שאר המצבים, וסרגל עליון עם כפתור "אודות" (פינה ימנית) וכפתור השתקה (פינה שמאלית), כמתואר ב-DESIGN.md.
+- כרטיס סיום בהפסד: "המשחק נגמר", "הגעת לשלב" (ערך `level` בעת הטעות), "הניקוד שלך" ו"משחק חדש". בניצחון: "ניצחת!", ניקוד 55 ו"משחק חדש", ללא שורת שלב.
 - מסך אודות: תיאור, הוראות, שיטת ניקוד, שיא אישי ו"חזרה למשחק".
 - ניווט ל"אודות" מבטל משחק פעיל; חזרה מציגה `idle`. אין סרגל ניווט קבוע.
 - צלילים: ארבע תדירויות שונות ומובחנות ב-Web Audio API, עם Envelope קצר ב-Gain למניעת Clicks. מיפוי תדירויות קבוע בקוד. להתחיל/לחדש `AudioContext` בתוך לחיצת "התחל" או אינטראקציה ישירה אחרת; לא להסתמך על Autoplay בעת טעינת הדף.
@@ -172,12 +176,14 @@ type GameState = {
 - Repository יחיד ב-GitHub; ענף פרסום `main`. הקוד המקורי ו-`package-lock.json` נשמרים ב-Git, ותיקיית `dist/` אינה נדרשת ב-Repository.
 - סביבת פיתוח: Node.js בגרסת LTS נתמכת על ידי גרסת Vite שנבחרה, `npm ci`, `npm run dev`. אין צורך ב-Docker או בשירותי Cloud לפיתוח מקומי.
 - Scripts צפויים: `dev`, `typecheck`, `test`, `build`, `preview`; `build` מפיק את `dist/`.
-- `vite.config` מגדיר `base: '/<REPO>/'` עבור אתר פרויקט ב-GitHub Pages; באתר User/Organization או בדומיין מותאם עם Root יש להשתמש ב-`'/'`. `start_url`, `scope` ונתיבי אייקונים חייבים להיות עקביים עם Base Path.
+- Repository: `https://github.com/tomerjbai-dev/Simon` (ציבורי). כתובת האתר: `https://tomerjbai-dev.github.io/Simon/`.
+- `vite.config` מגדיר `base: '/Simon/'` (באות S גדולה — הנתיב רגיש לאותיות גדולות וקטנות). `start_url`, `scope`, נתיבי אייקונים ונתיב גרפיקת הרקע חייבים להיות עקביים עם Base Path.
+- הפריסה ל-GitHub Pages פועלת מההתחלה, כך שכל גרסה שנדחפה ל-`main` זמינה לבדיקה בטלפון בכתובת האתר. Push ל-`main` מתבצע רק לאחר אישור המשתמש (ראו CLAUDE.md), ולכן כל פריסה היא של גרסה מאושרת.
 - GitHub → Settings → Pages → Source: **GitHub Actions**.
 - Workflow על Push ל-`main` (ואפשר בדיקות על Pull Request): `checkout` → `setup-node` → `npm ci` → `typecheck` → `test` → `build` → `upload-pages-artifact` של `dist/` → `deploy-pages`.
 - הרשאות Workflow לפריסה: `contents: read`, `pages: write`, `id-token: write`; פריסה לסביבת `github-pages` ורק מענף הפרסום.
 - אין משתני Production סודיים ואין Database Migrations. כל שינוי שאושר ומוזג ל-`main` נבנה ונפרס אוטומטית; כשל בדיקות או Build חוסם פריסה.
-- GitHub Pages מפרסם אתר ציבורי. ב-GitHub Free ניתן להשתמש ב-Pages עם Repository ציבורי; Repository פרטי דורש תוכנית תומכת. אין לבחור פרטי בהנחה ש-Pages יהיה חינמי.
+- GitHub Pages מפרסם אתר ציבורי. ה-Repository ציבורי, ולכן Pages זמין ב-GitHub Free.
 
 ### 2.11 בדיקות וקבלת התנהגות
 
