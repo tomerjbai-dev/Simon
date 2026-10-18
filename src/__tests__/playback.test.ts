@@ -68,4 +68,13 @@ describe('flashDurationForLevel', () => {
     expect(flashDurationForLevel(1)).toBe(1000);
     expect(flashDurationForLevel(10)).toBe(400);
   });
+
+  it('gets shorter by the same step at every level', () => {
+    const durations = Array.from({ length: 10 }, (_, i) => flashDurationForLevel(i + 1));
+    expect(durations).toEqual([1000, 933, 867, 800, 733, 667, 600, 533, 467, 400]);
+    for (let i = 1; i < durations.length; i++) {
+      // 600ms over 9 steps; rounding to whole milliseconds allows 1ms either way
+      expect(Math.abs(durations[i - 1] - durations[i] - 600 / 9)).toBeLessThan(1);
+    }
+  });
 });

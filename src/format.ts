@@ -5,6 +5,7 @@ export const TEXT = {
   start: 'התחל',
   newGame: 'משחק חדש',
   gameOver: 'המשחק נגמר',
+  won: 'ניצחת!',
   reachedLevel: 'הגעת לשלב',
   yourScore: 'הניקוד שלך',
   mute: 'השתק צלילים',

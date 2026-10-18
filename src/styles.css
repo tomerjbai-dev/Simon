@@ -347,6 +347,124 @@ button:focus-visible {
   text-shadow: 0 0 14px rgba(110, 231, 255, 0.35);
 }
 
+/* ---------- Win celebration ---------- */
+
+/* Confetti stays inside the card, so it never causes page scrolling */
+.result-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.result-card > :not(.celebration) {
+  position: relative;
+  z-index: 1;
+}
+
+.celebration {
+  display: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.result-card.is-win .celebration {
+  display: block;
+}
+
+.confetti {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  width: 10px;
+  height: 16px;
+  margin: -8px 0 0 -5px;
+  border-radius: 3px;
+  background: var(--piece);
+  box-shadow: 0 0 8px var(--piece);
+  opacity: 0;
+  animation: confetti-burst 1.6s ease-out var(--delay) infinite;
+}
+
+.confetti-green {
+  --piece: var(--green);
+}
+
+.confetti-red {
+  --piece: var(--red);
+}
+
+.confetti-yellow {
+  --piece: var(--yellow);
+}
+
+.confetti-blue {
+  --piece: var(--blue);
+}
+
+/* Burst outward from the center, then drift down and fade */
+@keyframes confetti-burst {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(0) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(calc(var(--distance) * -1)) rotate(180deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(calc(var(--distance) * -1 - 20px)) rotate(320deg)
+      scale(0.8);
+  }
+}
+
+.result-card.is-win .result-title {
+  color: var(--glow);
+  animation: win-glow 1.6s ease-in-out infinite alternate;
+}
+
+.result-card.is-win .result-score {
+  animation: win-pop 600ms ease-out both;
+}
+
+@keyframes win-glow {
+  from {
+    text-shadow: 0 0 8px rgba(110, 231, 255, 0.4);
+  }
+  to {
+    text-shadow:
+      0 0 22px rgba(110, 231, 255, 0.95),
+      0 0 4px rgba(255, 255, 255, 0.8);
+  }
+}
+
+@keyframes win-pop {
+  from {
+    transform: scale(0.6);
+  }
+  70% {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .celebration {
+    display: none !important;
+  }
+
+  .result-card.is-win .result-title,
+  .result-card.is-win .result-score {
+    animation: none;
+    text-shadow: 0 0 18px rgba(110, 231, 255, 0.8);
+  }
+}
+
 /* ---------- Buttons ---------- */
 
 .btn {

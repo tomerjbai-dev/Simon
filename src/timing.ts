@@ -5,6 +5,7 @@ export const GAP_BETWEEN_FLASHES = 250;
 export const PRESS_FLASH = 250;
 export const SUCCESS_FEEDBACK = 700;
 export const LOSS_REVEAL_DELAY = 300;
+export const WIN_REVEAL_DELAY = 700;
 
 const FIRST_LEVEL_FLASH = 1000;
 const LAST_LEVEL_FLASH = 400;

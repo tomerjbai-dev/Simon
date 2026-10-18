@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { finishPresenting, pressColor, startGame, toggleMute } from '../game';
-import { createInitialState, type Color, type GameState } from '../state';
+import { advanceLevel, finishPresenting, pressColor, startGame, toggleMute } from '../game';
+import { COLORS, createInitialState, type Color, type GameState } from '../state';
+
+function rngFrom(values: number[]): () => number {
+  let i = 0;
+  return () => values[i++ % values.length];
+}
 
 function inputState(sequence: Color[]): GameState {
   return { ...createInitialState(), phase: 'input', level: sequence.length, sequence, runId: 1 };
@@ -94,9 +99,134 @@ describe('pressColor', () => {
     expect(second.state.phase).toBe('lost');
   });
 
+  it('wins on the last correct press of level 10 and adds 10 points', () => {
+    const sequence: Color[] = [
+      'red',
+      'red',
+      'blue',
+      'green',
+      'yellow',
+      'red',
+      'blue',
+      'blue',
+      'green',
+      'red',
+    ];
+    let state: GameState = { ...inputState(sequence), score: 45 };
+    let result = '';
+    for (const color of sequence) ({ state, result } = pressColor(state, color));
+    expect(result).toBe('won');
+    expect(state.phase).toBe('won');
+    expect(state.score).toBe(55);
+    expect(pressColor(state, 'red').result).toBe('ignored');
+  });
+
   it('ignores presses after losing', () => {
     const { state } = pressColor(inputState(['red', 'blue']), 'green');
     expect(pressColor(state, 'red').result).toBe('ignored');
+  });
+});
+
+describe('advanceLevel', () => {
+  function successAt(level: number, score: number): GameState {
+    const sequence = Array<Color>(level).fill('red');
+    return {
+      ...inputState(sequence),
+      phase: 'stageSuccess',
+      nextInputIndex: level,
+      score,
+    };
+  }
+
+  it('moves to the next level with a sequence of that length', () => {
+    const next = advanceLevel(successAt(3, 6));
+    expect(next.phase).toBe('presenting');
+    expect(next.level).toBe(4);
+    expect(next.sequence).toHaveLength(4);
+    expect(next.nextInputIndex).toBe(0);
+    expect(next.score).toBe(6);
+  });
+
+  it('draws a brand-new sequence instead of extending the previous one', () => {
+    // Previous sequence is all red; the new one comes only from the random source
+    const next = advanceLevel(successAt(2, 3), rngFrom([0, 0.75, 0.5]));
+    expect(next.sequence).toEqual(['green', 'blue', 'yellow']);
+  });
+
+  it('allows repeats and uses only the four colors', () => {
+    expect(advanceLevel(successAt(4, 10), () => 0.6).sequence).toEqual([
+      'yellow',
+      'yellow',
+      'yellow',
+      'yellow',
+      'yellow',
+    ]);
+    for (const color of advanceLevel(successAt(9, 45)).sequence) {
+      expect(COLORS).toContain(color);
+    }
+  });
+
+  it('keeps the game run id', () => {
+    const state = successAt(5, 15);
+    expect(advanceLevel(state).runId).toBe(state.runId);
+  });
+
+  it.each(['idle', 'presenting', 'input', 'lost', 'won'] as const)(
+    'does nothing while %s',
+    (phase) => {
+      const state = { ...successAt(3, 6), phase };
+      expect(advanceLevel(state)).toBe(state);
+    },
+  );
+
+  it('never goes past level 10', () => {
+    const state = successAt(10, 55);
+    expect(advanceLevel(state)).toBe(state);
+  });
+});
+
+describe('full game', () => {
+  // Plays a game, answering correctly until the given level (if any) where it presses wrong
+  function play(failAtLevel?: number): {
+    state: GameState;
+    levelsSeen: number[];
+  } {
+    let state = startGame(createInitialState());
+    const levelsSeen: number[] = [];
+    while (state.phase === 'presenting') {
+      levelsSeen.push(state.level);
+      expect(state.sequence).toHaveLength(state.level);
+      state = finishPresenting(state, state.runId);
+      for (const color of state.sequence) {
+        const press = state.level === failAtLevel ? COLORS.find((c) => c !== color)! : color;
+        state = pressColor(state, press).state;
+        if (state.phase === 'lost') break;
+      }
+      state = advanceLevel(state);
+    }
+    return { state, levelsSeen };
+  }
+
+  it('has exactly 10 levels and ends with a win worth 55 points', () => {
+    const { state, levelsSeen } = play();
+    expect(levelsSeen).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(state.phase).toBe('won');
+    expect(state.score).toBe(55);
+  });
+
+  it('keeps only the points of completed levels after a mistake', () => {
+    const { state } = play(4);
+    expect(state.phase).toBe('lost');
+    expect(state.level).toBe(4);
+    expect(state.score).toBe(1 + 2 + 3);
+  });
+
+  it('can start a new game after winning', () => {
+    const { state } = play();
+    const next = startGame(state);
+    expect(next.phase).toBe('presenting');
+    expect(next.level).toBe(1);
+    expect(next.score).toBe(0);
   });
 });
 

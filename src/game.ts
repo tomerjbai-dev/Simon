@@ -1,7 +1,7 @@
 import { generateSequence, type Rng } from './sequence';
-import type { Color, GameState } from './state';
+import { TOTAL_LEVELS, type Color, type GameState } from './state';
 
-export type PressResult = 'ignored' | 'correct' | 'stageComplete' | 'wrong';
+export type PressResult = 'ignored' | 'correct' | 'stageComplete' | 'won' | 'wrong';
 
 export function startGame(state: GameState, rng?: Rng): GameState {
   return {
@@ -36,9 +36,27 @@ export function pressColor(
     return { state: { ...state, nextInputIndex }, result: 'correct' };
   }
 
+  const score = state.score + state.level;
+  if (state.level >= TOTAL_LEVELS) {
+    return { state: { ...state, nextInputIndex, phase: 'won', score }, result: 'won' };
+  }
   return {
-    state: { ...state, nextInputIndex, phase: 'stageSuccess', score: state.score + state.level },
+    state: { ...state, nextInputIndex, phase: 'stageSuccess', score },
     result: 'stageComplete',
+  };
+}
+
+// Moves to the next level with a brand-new sequence; never goes past the last level.
+// runId identifies the game, not the level, so it stays the same.
+export function advanceLevel(state: GameState, rng?: Rng): GameState {
+  if (state.phase !== 'stageSuccess' || state.level >= TOTAL_LEVELS) return state;
+  const level = state.level + 1;
+  return {
+    ...state,
+    phase: 'presenting',
+    level,
+    sequence: generateSequence(level, rng),
+    nextInputIndex: 0,
   };
 }
 

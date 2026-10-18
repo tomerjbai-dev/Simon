@@ -16,6 +16,8 @@ export type Ui = {
   showResult: (show: boolean) => void;
 };
 
+const CONFETTI_COUNT = 16;
+
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className?: string,
@@ -69,11 +71,27 @@ export function mountUi(root: HTMLElement, handlers: UiHandlers): Ui {
   }
 
   const card = el('section', 'card result-card');
+  const resultTitle = el('h2', 'result-title text-h2');
+  const reachedLabel = el('div', 'result-label text-body-l', TEXT.reachedLevel);
   const reachedValue = el('div', 'result-value');
-  const scoreValue = el('div', 'result-value');
+  const scoreValue = el('div', 'result-value result-score');
+
+  // Decorative confetti for the win state; each piece gets its own direction and delay
+  const celebration = el('div', 'celebration');
+  celebration.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < CONFETTI_COUNT; i++) {
+    const piece = el('span', `confetti confetti-${BOARD_LAYOUT[i % BOARD_LAYOUT.length].color}`);
+    const angle = (360 / CONFETTI_COUNT) * i;
+    piece.style.setProperty('--angle', `${angle}deg`);
+    piece.style.setProperty('--distance', `${110 + (i % 3) * 30}px`);
+    piece.style.setProperty('--delay', `${(i % 4) * 80}ms`);
+    celebration.append(piece);
+  }
+
   card.append(
-    el('h2', 'result-title text-h2', TEXT.gameOver),
-    el('div', 'result-label text-body-l', TEXT.reachedLevel),
+    celebration,
+    resultTitle,
+    reachedLabel,
     reachedValue,
     el('div', 'result-label text-body-l', TEXT.yourScore),
     scoreValue,
@@ -89,11 +107,11 @@ export function mountUi(root: HTMLElement, handlers: UiHandlers): Ui {
   root.replaceChildren(screen);
 
   let resultShown = false;
-  let successOn = false;
   let current: GameState | null = null;
 
   function applyLayout(state: GameState): void {
-    const showCard = state.phase === 'lost' && resultShown;
+    const finished = state.phase === 'lost' || state.phase === 'won';
+    const showCard = finished && resultShown;
     title.hidden = state.phase !== 'idle';
     statusBar.hidden = state.phase === 'idle';
     header.hidden = showCard;
@@ -101,11 +119,7 @@ export function mountUi(root: HTMLElement, handlers: UiHandlers): Ui {
     card.hidden = !showCard;
 
     // The button keeps its space while hidden, so the board never shifts
-    const hideButton =
-      state.phase === 'presenting' ||
-      state.phase === 'input' ||
-      successOn ||
-      (state.phase === 'lost' && !resultShown);
+    const hideButton = state.phase !== 'idle' && !showCard;
     actions.classList.toggle('is-reserved', hideButton);
     primary.disabled = hideButton;
   }
@@ -113,7 +127,7 @@ export function mountUi(root: HTMLElement, handlers: UiHandlers): Ui {
   return {
     update(state) {
       current = state;
-      if (state.phase !== 'lost') resultShown = false;
+      if (state.phase !== 'lost' && state.phase !== 'won') resultShown = false;
 
       mute.innerHTML = state.muted ? ICON_SOUND_OFF : ICON_SOUND_ON;
       mute.setAttribute('aria-label', state.muted ? TEXT.unmute : TEXT.mute);
@@ -123,6 +137,12 @@ export function mountUi(root: HTMLElement, handlers: UiHandlers): Ui {
       scoreText.textContent = formatScore(state.score);
       reachedValue.textContent = String(state.level);
       scoreValue.textContent = String(state.score);
+
+      const won = state.phase === 'won';
+      resultTitle.textContent = won ? TEXT.won : TEXT.gameOver;
+      reachedLabel.hidden = won;
+      reachedValue.hidden = won;
+      card.classList.toggle('is-win', won);
 
       const inputOpen = state.phase === 'idle' || state.phase === 'input';
       board.classList.toggle('is-locked', !inputOpen);
@@ -138,9 +158,7 @@ export function mountUi(root: HTMLElement, handlers: UiHandlers): Ui {
     },
 
     setSuccess(on) {
-      successOn = on;
       board.classList.toggle('is-success', on);
-      if (current) applyLayout(current);
     },
 
     showResult(show) {

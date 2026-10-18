@@ -1,8 +1,14 @@
 import type { Audio } from './audio';
-import { finishPresenting, pressColor, startGame, toggleMute } from './game';
+import { advanceLevel, finishPresenting, pressColor, startGame, toggleMute } from './game';
 import { playSequence } from './playback';
 import { createInitialState, type Color, type GameState } from './state';
-import { flashDurationForLevel, LOSS_REVEAL_DELAY, PRESS_FLASH, SUCCESS_FEEDBACK } from './timing';
+import {
+  flashDurationForLevel,
+  LOSS_REVEAL_DELAY,
+  PRESS_FLASH,
+  SUCCESS_FEEDBACK,
+  WIN_REVEAL_DELAY,
+} from './timing';
 import { mountUi, type Ui } from './ui';
 
 // Wires the pure game logic to timers, audio and the DOM.
@@ -51,7 +57,11 @@ export function createApp(root: HTMLElement, audio: Audio): void {
     ui.setSuccess(false);
     ui.showResult(false);
     setState(startGame(state));
+    playLevel();
+  }
 
+  // Plays the current level's sequence, then opens input
+  function playLevel(): void {
     const runId = state.runId;
     const flashMs = flashDurationForLevel(state.level);
     cancelPlayback = playSequence(state.sequence, flashMs, {
@@ -83,7 +93,18 @@ export function createApp(root: HTMLElement, audio: Audio): void {
 
     if (result === 'stageComplete') {
       ui.setSuccess(true);
-      later(SUCCESS_FEEDBACK, () => ui.setSuccess(false));
+      later(SUCCESS_FEEDBACK, () => {
+        ui.setSuccess(false);
+        setState(advanceLevel(state));
+        playLevel();
+      });
+    } else if (result === 'won') {
+      ui.setSuccess(true);
+      later(WIN_REVEAL_DELAY, () => {
+        ui.setSuccess(false);
+        ui.setActiveTile(null);
+        ui.showResult(true);
+      });
     } else if (result === 'wrong') {
       later(LOSS_REVEAL_DELAY, () => {
         ui.setActiveTile(null);
