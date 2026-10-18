@@ -122,6 +122,10 @@ button:focus-visible {
     calc(var(--space-5) + env(safe-area-inset-bottom));
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .top-bar {
   display: flex;
   justify-content: space-between;
@@ -131,6 +135,42 @@ button:focus-visible {
   flex-shrink: 0;
 }
 
+/* Header, board/card and actions are centered together vertically */
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  width: 100%;
+  margin-block: auto;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: var(--top-bar-height);
+  height: var(--top-bar-height);
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(36, 49, 79, 0.85);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    filter 120ms ease;
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+  filter: brightness(1.15);
+}
+
+.top-bar-slot {
+  width: var(--top-bar-height);
+  height: var(--top-bar-height);
+}
+
 .header {
   display: flex;
   justify-content: center;
@@ -138,8 +178,6 @@ button:focus-visible {
   width: 100%;
   min-height: 56px;
   flex-shrink: 0;
-  /* Header, board and actions are centered together vertically */
-  margin-top: auto;
 }
 
 .title {
@@ -156,7 +194,11 @@ button:focus-visible {
 .actions {
   width: 100%;
   flex-shrink: 0;
-  margin-bottom: auto;
+}
+
+/* Keeps its height so the board does not move while the button is hidden */
+.actions.is-reserved {
+  visibility: hidden;
 }
 
 /* ---------- Surfaces ---------- */
@@ -246,8 +288,63 @@ button:focus-visible {
     inset 0 0 22px rgba(255, 255, 255, 0.3);
 }
 
-.tile:active {
+.tile:active:not(:disabled) {
   transform: scale(0.97);
+}
+
+.tile:disabled {
+  cursor: default;
+}
+
+/* Locked board: input is blocked, idle tiles are slightly dimmer than the lit one */
+.board.is-locked .tile:not(.is-active) {
+  filter: brightness(0.8) saturate(0.9);
+}
+
+.board.is-locked .tile:active:not(.is-active) {
+  border-color: color-mix(in srgb, var(--tile) 60%, white);
+  box-shadow:
+    0 0 14px color-mix(in srgb, var(--tile) 45%, transparent),
+    inset 0 0 18px rgba(255, 255, 255, 0.12);
+}
+
+/* Short shared glow after a correctly repeated sequence */
+.board.is-success .tile,
+.board.is-success.is-locked .tile:not(.is-active) {
+  filter: brightness(1.25) saturate(1.1);
+  border-color: color-mix(in srgb, var(--tile) 30%, white);
+  box-shadow:
+    0 0 28px color-mix(in srgb, var(--tile) 85%, transparent),
+    0 0 8px rgba(255, 255, 255, 0.6),
+    inset 0 0 22px rgba(255, 255, 255, 0.3);
+}
+
+/* ---------- Result card ---------- */
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-6) var(--space-5);
+  text-align: center;
+}
+
+.result-title {
+  margin: 0 0 var(--space-4);
+}
+
+.result-label {
+  color: var(--text);
+}
+
+.result-value {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: var(--space-3);
+  text-shadow: 0 0 14px rgba(110, 231, 255, 0.35);
 }
 
 /* ---------- Buttons ---------- */

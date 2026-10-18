@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createInitialState, TOTAL_LEVELS } from '../state';
+import { COLORS, createInitialState, TOTAL_LEVELS } from '../state';
 import { formatLevel, formatScore } from '../format';
 
 describe('createInitialState', () => {
@@ -19,6 +19,11 @@ describe('createInitialState', () => {
     const b = createInitialState();
     a.sequence.push('red');
     expect(b.sequence).toEqual([]);
+  });
+
+  it('has exactly four distinct colors', () => {
+    expect(new Set(COLORS).size).toBe(4);
+    expect(COLORS).toHaveLength(4);
   });
 
   it('has exactly 10 levels', () => {

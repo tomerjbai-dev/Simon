@@ -15,6 +15,9 @@ export type GameState = {
 
 export const TOTAL_LEVELS = 10;
 
+// Single source for the four game colors
+export const COLORS: readonly Color[] = ['green', 'red', 'yellow', 'blue'];
+
 export function createInitialState(): GameState {
   return {
     screen: 'home',
