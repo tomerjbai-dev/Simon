@@ -4,8 +4,9 @@ import '@fontsource/heebo/700.css';
 import './styles.css';
 import { createApp } from './app';
 import { createAudio } from './audio';
+import { createHighScoreStore, getLocalStorage } from './highScore';
 
 const root = document.querySelector<HTMLElement>('#app');
 if (root) {
-  createApp(root, createAudio());
+  createApp(root, createAudio(), createHighScoreStore(getLocalStorage()));
 }

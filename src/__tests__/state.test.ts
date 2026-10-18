@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COLORS, createInitialState, TOTAL_LEVELS } from '../state';
-import { formatLevel, formatScore } from '../format';
+import { formatHighScore, formatLevel, formatScore } from '../format';
 
 describe('createInitialState', () => {
   it('starts idle on the home screen with no progress', () => {
@@ -35,5 +35,15 @@ describe('format', () => {
   it('formats level and score in Hebrew', () => {
     expect(formatLevel(3)).toBe('שלב 3 מתוך 10');
     expect(formatScore(2)).toBe('ניקוד: 2');
+  });
+});
+
+describe('formatHighScore', () => {
+  it('shows a placeholder when there is no record', () => {
+    expect(formatHighScore(0)).toBe('עדיין אין שיא');
+  });
+
+  it('shows the record number', () => {
+    expect(formatHighScore(21)).toBe('21');
   });
 });

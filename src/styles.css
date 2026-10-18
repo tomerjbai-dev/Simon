@@ -166,11 +166,6 @@ button:focus-visible {
   filter: brightness(1.15);
 }
 
-.top-bar-slot {
-  width: var(--top-bar-height);
-  height: var(--top-bar-height);
-}
-
 .header {
   display: flex;
   justify-content: center;
@@ -513,4 +508,78 @@ button:focus-visible {
   box-shadow: none;
   cursor: default;
   transform: none;
+}
+
+/* ---------- About screen ---------- */
+
+/* The only screen that may scroll, and only vertically */
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  margin: 0 auto;
+  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--space-4)
+    calc(var(--space-5) + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.about-title {
+  margin: 0 0 var(--space-2);
+  outline: none;
+}
+
+.about-card,
+.about-record {
+  padding: var(--space-4) var(--space-5);
+}
+
+.about-record {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.about-record-value {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: 0 0 14px rgba(110, 231, 255, 0.35);
+}
+
+.about-record-value.is-empty {
+  font-size: 18px;
+  font-weight: 500;
+  text-shadow: none;
+}
+
+.about-heading {
+  margin: 0 0 var(--space-2);
+  text-align: center;
+}
+
+.about-text {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.about-list {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  line-height: 1.6;
+}
+
+.about-list li + li {
+  margin-top: var(--space-2);
+}
+
+.about .btn {
+  flex-shrink: 0;
+  margin-top: var(--space-2);
 }

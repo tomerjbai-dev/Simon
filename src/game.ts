@@ -63,3 +63,30 @@ export function advanceLevel(state: GameState, rng?: Rng): GameState {
 export function toggleMute(state: GameState): GameState {
   return { ...state, muted: !state.muted };
 }
+
+// Cancels the current game without touching the high score.
+// A new runId invalidates every pending timer and callback of the old game.
+export function abandonGame(state: GameState): GameState {
+  if (state.phase === 'idle') return state;
+  return {
+    ...state,
+    phase: 'idle',
+    level: 0,
+    score: 0,
+    sequence: [],
+    nextInputIndex: 0,
+    runId: state.runId + 1,
+  };
+}
+
+export function openAbout(state: GameState): GameState {
+  return { ...abandonGame(state), screen: 'about' };
+}
+
+export function closeAbout(state: GameState): GameState {
+  return { ...state, screen: 'home' };
+}
+
+export function isGameActive(state: GameState): boolean {
+  return state.phase === 'presenting' || state.phase === 'input' || state.phase === 'stageSuccess';
+}

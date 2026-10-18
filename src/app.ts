@@ -1,5 +1,16 @@
 import type { Audio } from './audio';
-import { advanceLevel, finishPresenting, pressColor, startGame, toggleMute } from './game';
+import {
+  abandonGame,
+  advanceLevel,
+  closeAbout,
+  finishPresenting,
+  isGameActive,
+  openAbout,
+  pressColor,
+  startGame,
+  toggleMute,
+} from './game';
+import type { HighScoreStore } from './highScore';
 import { playSequence } from './playback';
 import { createInitialState, type Color, type GameState } from './state';
 import {
@@ -13,7 +24,7 @@ import { mountUi, type Ui } from './ui';
 
 // Wires the pure game logic to timers, audio and the DOM.
 // Only this module changes the game state.
-export function createApp(root: HTMLElement, audio: Audio): void {
+export function createApp(root: HTMLElement, audio: Audio, highScore: HighScoreStore): void {
   let state: GameState = createInitialState();
   let cancelPlayback: (() => void) | null = null;
   let pressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -49,13 +60,24 @@ export function createApp(root: HTMLElement, audio: Audio): void {
     if (!state.muted) audio.play(color, ms);
   }
 
-  function onStart(): void {
-    // Must run inside the click handler so Chrome allows audio
-    audio.unlock();
+  // Stops everything the current game has scheduled and resets the visuals
+  function resetBoard(): void {
     clearPending();
     ui.setActiveTile(null);
     ui.setSuccess(false);
     ui.showResult(false);
+  }
+
+  // Cancels the game without saving its score
+  function leaveGame(): void {
+    resetBoard();
+    setState(abandonGame(state));
+  }
+
+  function onStart(): void {
+    // Must run inside the click handler so Chrome allows audio
+    audio.unlock();
+    resetBoard();
     setState(startGame(state));
     playLevel();
   }
@@ -91,6 +113,9 @@ export function createApp(root: HTMLElement, audio: Audio): void {
 
     setState(next);
 
+    // The game ends here, so the score is saved once, before the card appears
+    if (result === 'wrong' || result === 'won') highScore.record(next.score);
+
     if (result === 'stageComplete') {
       ui.setSuccess(true);
       later(SUCCESS_FEEDBACK, () => {
@@ -118,6 +143,27 @@ export function createApp(root: HTMLElement, audio: Audio): void {
     if (state.muted) audio.stopAll();
   }
 
-  const ui: Ui = mountUi(root, { onStart, onTile, onToggleMute });
+  // Leaving for "about" always returns to a fresh start screen
+  function onAbout(): void {
+    leaveGame();
+    ui.setHighScore(highScore.get());
+    setState(openAbout(state));
+  }
+
+  function onBack(): void {
+    setState(closeAbout(state));
+  }
+
+  // Backgrounding cancels only an active game; a finished result stays visible
+  function onHidden(): void {
+    if (isGameActive(state)) leaveGame();
+  }
+
+  const ui: Ui = mountUi(root, { onStart, onTile, onToggleMute, onAbout, onBack });
   ui.update(state);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') onHidden();
+  });
+  window.addEventListener('pagehide', onHidden);
 }

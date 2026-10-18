@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { advanceLevel, finishPresenting, pressColor, startGame, toggleMute } from '../game';
+import {
+  abandonGame,
+  advanceLevel,
+  closeAbout,
+  finishPresenting,
+  isGameActive,
+  openAbout,
+  pressColor,
+  startGame,
+  toggleMute,
+} from '../game';
+import { createHighScoreStore, HIGH_SCORE_KEY } from '../highScore';
 import { COLORS, createInitialState, type Color, type GameState } from '../state';
 
 function rngFrom(values: number[]): () => number {
@@ -236,5 +247,89 @@ describe('toggleMute', () => {
     const muted = toggleMute(state);
     expect(muted).toEqual({ ...state, muted: true });
     expect(toggleMute(muted).muted).toBe(false);
+  });
+});
+
+describe('abandonGame', () => {
+  const active: GameState = {
+    ...createInitialState(),
+    phase: 'input',
+    level: 4,
+    sequence: ['red', 'red', 'blue', 'green'],
+    nextInputIndex: 2,
+    score: 6,
+    muted: true,
+    runId: 3,
+  };
+
+  it.each(['presenting', 'input', 'stageSuccess', 'lost', 'won'] as const)(
+    'returns to the start state from %s',
+    (phase) => {
+      const state = abandonGame({ ...active, phase });
+      expect(state.phase).toBe('idle');
+      expect(state.level).toBe(0);
+      expect(state.score).toBe(0);
+      expect(state.sequence).toEqual([]);
+      expect(state.nextInputIndex).toBe(0);
+      expect(state.runId).toBe(4);
+      expect(state.muted).toBe(true);
+    },
+  );
+
+  it('leaves an idle state unchanged', () => {
+    const idle = createInitialState();
+    expect(abandonGame(idle)).toBe(idle);
+  });
+
+  it('invalidates callbacks of the cancelled game', () => {
+    const presenting = { ...active, phase: 'presenting' as const };
+    const cancelled = abandonGame(presenting);
+    expect(finishPresenting(cancelled, presenting.runId)).toBe(cancelled);
+    expect(advanceLevel(cancelled)).toBe(cancelled);
+    expect(pressColor(cancelled, 'red').result).toBe('ignored');
+  });
+});
+
+describe('isGameActive', () => {
+  it('is true only while a game is in progress', () => {
+    const base = createInitialState();
+    expect(isGameActive(base)).toBe(false);
+    expect(isGameActive({ ...base, phase: 'presenting' })).toBe(true);
+    expect(isGameActive({ ...base, phase: 'input' })).toBe(true);
+    expect(isGameActive({ ...base, phase: 'stageSuccess' })).toBe(true);
+    expect(isGameActive({ ...base, phase: 'lost' })).toBe(false);
+    expect(isGameActive({ ...base, phase: 'won' })).toBe(false);
+  });
+});
+
+describe('about navigation', () => {
+  it('opening about mid-game cancels the game', () => {
+    const playing = inputState(['green', 'blue']);
+    const state = openAbout({ ...playing, score: 3 });
+    expect(state.screen).toBe('about');
+    expect(state.phase).toBe('idle');
+    expect(state.score).toBe(0);
+    expect(state.runId).toBe(playing.runId + 1);
+  });
+
+  it('returning from about shows the start state', () => {
+    const state = closeAbout(openAbout(inputState(['red'])));
+    expect(state.screen).toBe('home');
+    expect(state.phase).toBe('idle');
+    expect(state.level).toBe(0);
+  });
+
+  it('leaving mid-game never changes the high score', () => {
+    const data = new Map<string, string>([[HIGH_SCORE_KEY, '10']]);
+    const store = createHighScoreStore({
+      getItem: (key) => data.get(key) ?? null,
+      setItem: (key, value) => void data.set(key, value),
+    });
+    // A game worth more than the record is cancelled before it ends
+    const playing = { ...inputState(Array<Color>(10).fill('red')), score: 45 };
+    abandonGame(playing);
+    openAbout(playing);
+    expect(store.get()).toBe(10);
+    expect(data.get(HIGH_SCORE_KEY)).toBe('10');
   });
 });
