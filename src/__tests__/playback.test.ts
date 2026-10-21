@@ -65,16 +65,16 @@ describe('playSequence', () => {
 
 describe('flashDurationForLevel', () => {
   it('is 1 second at level 1 and 0.4 seconds at level 10', () => {
-    expect(flashDurationForLevel(1)).toBe(1000);
+    expect(flashDurationForLevel(1)).toBe(500);
     expect(flashDurationForLevel(10)).toBe(400);
   });
 
   it('gets shorter by the same step at every level', () => {
     const durations = Array.from({ length: 10 }, (_, i) => flashDurationForLevel(i + 1));
-    expect(durations).toEqual([1000, 933, 867, 800, 733, 667, 600, 533, 467, 400]);
+    expect(durations).toEqual([500, 489, 478, 467, 456, 444, 433, 422, 411, 400]);
     for (let i = 1; i < durations.length; i++) {
-      // 600ms over 9 steps; rounding to whole milliseconds allows 1ms either way
-      expect(Math.abs(durations[i - 1] - durations[i] - 600 / 9)).toBeLessThan(1);
+      // 100ms over 9 steps; rounding to whole milliseconds allows 1ms either way
+      expect(Math.abs(durations[i - 1] - durations[i] - 100 / 9)).toBeLessThan(1);
     }
   });
 });

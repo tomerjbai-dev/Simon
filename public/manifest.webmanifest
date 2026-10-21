@@ -1,0 +1,20 @@
+{
+  "name": "סיימון",
+  "short_name": "סיימון",
+  "description": "משחק זיכרון של אורות וצלילים בעשרה שלבים",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/Simon/",
+  "scope": "/Simon/",
+  "id": "/Simon/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0B1020",
+  "background_color": "#0B1020",
+  "icons": [
+    { "src": "/Simon/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/Simon/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/Simon/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/Simon/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

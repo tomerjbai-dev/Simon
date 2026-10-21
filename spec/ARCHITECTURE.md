@@ -275,3 +275,13 @@ type GameState = {
 **הקשר:** שני מסכים בלבד, ללא Router (סעיף 2.1), ו-DOM שנבנה פעם אחת (ADR-7).
 **החלטה:** `mountUi` בונה גם את `main.about`; `update(state)` מציג מסך אחד לפי `state.screen`. מסך אודות הוא היחיד שנגלל, ורק אנכית. הטקסטים ב-`ABOUT_TEXT` ב-`src/format.ts`.
 **השלכות:** הכתובת לא משתנה ואין בעיית רענון נתיבים ב-GitHub Pages.
+
+### ADR-14: Manifest סטטי ב-`public/` עם נתיבי `/Simon/` מלאים
+**הקשר:** נדרש Web App Manifest להתקנה (2.8); Vite אינו משכתב נתיבים בתוך קבצים שב-`public/`.
+**החלטה:** `public/manifest.webmanifest` הוא קובץ JSON סטטי ש-`start_url`, `scope`, `id` ונתיבי האייקונים בו מלאים תחת `/Simon/`. `index.html` מקשר אליו (ול-Favicon) בנתיב מוחלט מהשורש (`/manifest.webmanifest`, `/favicon.svg`), ש-Vite מוסיף לו את `/Simon/` אוטומטית גם ב-dev וגם ב-build (`%BASE_URL%` גרם לכפילות `/Simon/Simon/` ב-dev). ללא Plugin ל-PWA וללא Service Worker. `orientation: "portrait"` לפי בחירת המשתמש.
+**השלכות:** שינוי שם ה-Repository או ה-`base` מחייב עדכון ידני של ה-Manifest; `manifest.test.ts` נכשל אם הנתיבים אינם תואמים ל-`base` שב-`vite.config.ts`.
+
+### ADR-15: אייקונים מופקים בסקריפט ללא תלויות ונשמרים בפרויקט
+**הקשר:** נדרשים אייקוני PNG בגדלים 192×192 ו-512×512, ואין בפרויקט כלי גרפי.
+**החלטה:** `scripts/generate-icons.mjs` (`npm run icons`) מצייר לוח 2×2 בצבעי האריחים על רקע `#0B1020` ושומר PNG בעזרת `zlib` של Node. הלוח תופס 60% מהרוחב, בתוך האזור הבטוח, ולכן אותם קבצים מוצהרים גם כ-`any` וגם כ-`maskable`. ה-PNG נשמרים ב-Git; ה-Build וה-CI אינם מריצים את הסקריפט.
+**השלכות:** שינוי עיצוב האייקון = עריכת הסקריפט והרצה ידנית של `npm run icons`.
